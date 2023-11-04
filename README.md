@@ -1,4 +1,4 @@
-# Playing “Blackjack” Using Q-Learning
+# 🃏 Playing “Blackjack” Using Q-Learning
 
 This is a simple example of the reinforcement learning technique known as q-learning, being applied to “blackjack”. I implemented this without following a demo and apparently don’t actually know the rules of blackjack so what I’ve implemented is slightly different. I’ve put the rules I used below.
 
