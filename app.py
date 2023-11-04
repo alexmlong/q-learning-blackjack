@@ -14,13 +14,17 @@ class BlackjackAgent:
     qtable = {}
     history = []
 
-    def __init__(
-        self,
-        epsilon,
-    ):
+    def __init__(self,epsilon):
         self.epsilon = epsilon
 
     def get_action(self, obs: tuple[int, int]) -> int:
+        """
+        Either chooses an action at random, with probability 1 - epsilon,
+        or chooses the action that has the highest known value so far.
+
+        This is used at each point in the game where the agent gets to
+        make a decision.
+        """
         if random.random() > self.epsilon:
             return random.choice(ACTIONS)
         else:
@@ -30,6 +34,16 @@ class BlackjackAgent:
             return best_choice
 
     def calc_discounted_rewards(self, reward):
+        """
+        Calculates rewards for every action in the agent's history and
+        by taking the base reward provided and discounting it (i.e.
+        setting it closer to 0) progressively for each step in history,
+        such that older steps are given a more heavily discounted reward.
+
+        This is used when a game completes and a reward is given
+        depending on whether or not the agent won, which is then used to
+        update the agent's mapping of value for actions in various states.
+        """
         rewards = []
         for index, step in enumerate(reversed(self.history)):
             discount_step = 1 / len(self.history)
@@ -41,6 +55,11 @@ class BlackjackAgent:
         self,
         reward
     ):
+        """
+        This updates the agent's mapping of values for specific actions
+        in specific states based on the provided reward. This is used when
+        a game completes.
+        """
         discounted_rewards = self.calc_discounted_rewards(reward)
         for index, step in enumerate(reversed(self.history)):
             if step['state'] not in self.qtable:
@@ -53,8 +72,7 @@ class BlackjackAgent:
         pass
 
 def take_turn(player, state, agent):
-    # for given turn
-    # player decides whether to hit or stay
+    """ Executes a single turn of Black Jack. """
     if player['type'] == 'dealer':
         if player['score'] < 15:
             player['score'] += random.randint(1, 10)
@@ -69,6 +87,7 @@ def take_turn(player, state, agent):
             player['did_stay'] = True
 
 def make_confusion_matrix():
+    """ Creates a plot showing the agent's preferred action. """
     matrix = np.zeros((21, 21))
     for state, values in agent.qtable.items():
         matrix[state[0]][state[1]] = 1 if values[0] > values[1] else 0
@@ -77,22 +96,14 @@ def make_confusion_matrix():
     plt.xlabel("agent score")
     plt.ylabel("dealer score")
     note_text = "blue = stay, white = hit"
-    x_coord = 8  # X-coordinate of the textbox
-    y_coord = 0  # Y-coordinate of the textbox
+    x_coord = 8
+    y_coord = 0
 
     plt.text(x_coord, y_coord, note_text, fontsize=12, color='black',
             bbox=dict(alpha=0.7))
-    # plt.legend()
 
-    # if hit, increase score accordingly
-        # if busted, other player wins
-    # if stay, update player status
-    
-    # if both players have stayed, calc winner
-        # update agent
-
-# repeat games over and over to train agent
 def run_experiment():
+    """ Runs the entire experiment, training and evaluating the agent. """
     agent = BlackjackAgent(epsilon=0.2)
     game_count = 200000
     step_size = int(game_count / 20)
@@ -102,7 +113,6 @@ def run_experiment():
             {'type': 'dealer', 'score': 0, 'did_stay': False},
             {'type': 'agent', 'score': 0, 'did_stay': False},
         ]
-        game_is_over = False
         winner_index = None
         active_player_index = 0
         while winner_index is None:
@@ -129,32 +139,6 @@ def run_experiment():
         if game_index % step_size == 0:
             make_confusion_matrix()
             plt.savefig(f"confusion_matrix_game{game_index}.png")
-
-    # given a list of winners
-    # create a graph that shows on the x axis the number games played
-    # and on the y axis the percent of the last 100 games that were won by the agent
-    # convert list of winners into list of win percents by reducing down
-    # step through list with step size equal to x axis tick interval
-    # win_counts = []
-    # window_size = 1
-    # for game_index in range(step_size, game_count, step_size):
-    # # get last 100 games
-    #     prev_game_window = winner_indices[game_index - window_size: game_index]
-    # # calc win perc
-    #     agent_wins = len(list(filter(lambda index: index == 1, prev_game_window)))
-    # # store it
-    #     win_counts.append(agent_wins)
-
-    # print(win_counts)
-    # print(list(range(step_size, game_count, step_size)))
-    # plt.plot(list(range(step_size, game_count, step_size)), win_counts)
-    # plt.xlabel("number of games played")
-    # plt.ylabel(f"number of agent wins in previous {window_size} games")
-    # plt.show()
-    # from pprint import pprint
-    # pprint(agent.qtable)
-    # # pprint({k: ('HIT' if v[0] > v[1] else 'STAY') + str(v) for k, v in agent.qtable.items()})
-    # pprint({k: 0 if v[0] > v[1] else 1 for k, v in agent.qtable.items()})
 
     make_confusion_matrix()
     plt.show()
